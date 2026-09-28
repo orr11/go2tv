@@ -6,15 +6,15 @@ import (
 
 // SubtitleCandidate represents a downloadable subtitle match
 type SubtitleCandidate struct {
-	ID          string
-	Language    string
-	LanguageName string
-	Type        string // "srt", "vtt", "ass", etc.
-	DownloadURL string
-	Score       float64 // 0.0-1.0 match confidence
-	FileName    string
-	IsTrusted   bool
-	UploadCount int
+	ID            string
+	Language      string
+	LanguageName  string
+	Type          string  // "srt", "vtt", "ass", etc.
+	DownloadURL   string
+	Score         float64 // 0.0-1.0 match confidence
+	FileName      string
+	IsTrusted     bool
+	UploadCount   int
 	DownloadCount int
 }
 
