@@ -1,0 +1,54 @@
+name: Subtitles Tests
+
+on:
+  push:
+    paths:
+      - 'internal/subtitles/**'
+      - '.github/workflows/subtitles-test.yml'
+  pull_request:
+    paths:
+      - 'internal/subtitles/**'
+      - '.github/workflows/subtitles-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CGO_CFLAGS_ALLOW: -fno-strict-overflow
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install Linux deps
+        run: sudo apt update && sudo apt install -y xorg-dev libwayland-dev libxkbcommon-dev libegl-dev libpipewire-0.3-dev pkg-config
+
+      - name: Run subtitle unit tests
+        run: go test -v -race -coverprofile=coverage.out ./internal/subtitles/...
+
+      - name: Show coverage summary
+        run: go tool cover -func=coverage.out | tail -n 5
+
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      CGO_CFLAGS_ALLOW: -fno-strict-overflow
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install Linux deps
+        run: sudo apt update && sudo apt install -y xorg-dev libwayland-dev libxkbcommon-dev libegl-dev libpipewire-0.3-dev pkg-config
+
+      - name: Full build smoke test
+        run: go build -v ./...
+
+      - name: Full test smoke test
+        run: go test -v ./...
