@@ -1,80 +1,105 @@
 package subtitles
 
 import (
-    "path/filepath"
-    "regexp"
-    "strings"
-
-    "golang.org/x/text/cases"
-    "golang.org/x/text/language"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 func BuildQueryFromPath(filePath string) string {
-    base := filepath.Base(filePath)
-    name := strings.TrimSuffix(base, filepath.Ext(base))
-    name = strings.TrimSpace(name)
+	base := filepath.Base(filePath)
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	name = strings.TrimSpace(name)
 
-    name = regexp.MustCompile(`[._\-]+`).ReplaceAllString(name, " ")
-    name = regexp.MustCompile(`(?i)(1080p|720p|480p|2160p|4k|8k|hd|sd|hdtv|tv|bdrip|webrip|dvdrip|bluray|x264|x265|h264|h265|aac|ac3|dts)`).ReplaceAllString(name, " ")
-    name = regexp.MustCompile(`\s+`).ReplaceAllString(name, " ")
-    name = strings.TrimSpace(name)
+	// Replace separators
+	name = regexp.MustCompile(`[._\-]+`).ReplaceAllString(name, " ")
 
-    // Human-readable title casing, but without lowercasing the whole string.
-    return cases.Title(language.Und).String(name)
+	// Remove quality / codec tags
+	name = regexp.MustCompile(`(?i)(1080p|720p|480p|2160p|4k|8k|hd|sd|hdtv|tv|bdrip|webrip|dvdrip|bluray|x264|x265|h264|h265|aac|ac3|dts)`).ReplaceAllString(name, " ")
+
+	// Collapse spaces
+	name = regexp.MustCompile(`\s+`).ReplaceAllString(name, " ")
+	name = strings.TrimSpace(name)
+
+	return titleWords(name)
+}
+
+func titleWords(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	parts := strings.Fields(s)
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+
+		r, size := utf8.DecodeRuneInString(part)
+		if unicode.IsLetter(r) {
+			parts[i] = strings.ToUpper(string(r)) + part[size:]
+		}
+	}
+
+	return strings.Join(parts, " ")
 }
 
 func NormalizeQuery(q string) string {
-    q = strings.TrimSpace(q)
-    q = strings.ToLower(q)
-    q = regexp.MustCompile(`\s+`).ReplaceAllString(q, " ")
-    return strings.TrimSpace(q)
+	q = strings.TrimSpace(q)
+	q = strings.ToLower(q)
+	q = regexp.MustCompile(`\s+`).ReplaceAllString(q, " ")
+	return strings.TrimSpace(q)
 }
 
 func FilterByLanguage(candidates []SubtitleCandidate, lang string) []SubtitleCandidate {
-    if lang == "" || lang == "all" {
-        return candidates
-    }
-    var filtered []SubtitleCandidate
-    for _, c := range candidates {
-        if strings.EqualFold(c.Language, lang) {
-            filtered = append(filtered, c)
-        }
-    }
-    return filtered
+	if lang == "" || lang == "all" {
+		return candidates
+	}
+
+	var filtered []SubtitleCandidate
+	for _, c := range candidates {
+		if strings.EqualFold(c.Language, lang) {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
 }
 
 func FilterByType(candidates []SubtitleCandidate, typ string) []SubtitleCandidate {
-    if typ == "" || typ == "all" {
-        return candidates
-    }
-    var filtered []SubtitleCandidate
-    for _, c := range candidates {
-        if strings.EqualFold(c.Type, typ) {
-            filtered = append(filtered, c)
-        }
-    }
-    return filtered
+	if typ == "" || typ == "all" {
+		return candidates
+	}
+
+	var filtered []SubtitleCandidate
+	for _, c := range candidates {
+		if strings.EqualFold(c.Type, typ) {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
 }
 
 func SortByScore(candidates []SubtitleCandidate) []SubtitleCandidate {
-    sorted := make([]SubtitleCandidate, len(candidates))
-    copy(sorted, candidates)
+	sorted := make([]SubtitleCandidate, len(candidates))
+	copy(sorted, candidates)
 
-    for i := 0; i < len(sorted); i++ {
-        for j := i + 1; j < len(sorted); j++ {
-            if sorted[j].Score > sorted[i].Score {
-                sorted[i], sorted[j] = sorted[j], sorted[i]
-            } else if sorted[j].Score == sorted[i].Score && sorted[j].DownloadCount > sorted[i].DownloadCount {
-                sorted[i], sorted[j] = sorted[j], sorted[i]
-            }
-        }
-    }
-    return sorted
+	for i := 0; i < len(sorted); i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			if sorted[j].Score > sorted[i].Score {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			} else if sorted[j].Score == sorted[i].Score && sorted[j].DownloadCount > sorted[i].DownloadCount {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			}
+		}
+	}
+	return sorted
 }
 
 func SelectBest(candidates []SubtitleCandidate) *SubtitleCandidate {
-    if len(candidates) == 0 {
-        return nil
-    }
-    return &candidates[0]
+	if len(candidates) == 0 {
+		return nil
+	}
+	return &candidates[0]
 }
