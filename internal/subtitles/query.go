@@ -4,8 +4,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
 func BuildQueryFromPath(filePath string) string {
@@ -13,37 +11,18 @@ func BuildQueryFromPath(filePath string) string {
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 	name = strings.TrimSpace(name)
 
-	// Replace separators
+	// Normalize separators
 	name = regexp.MustCompile(`[._\-]+`).ReplaceAllString(name, " ")
 
 	// Remove quality / codec tags
 	name = regexp.MustCompile(`(?i)(1080p|720p|480p|2160p|4k|8k|hd|sd|hdtv|tv|bdrip|webrip|dvdrip|bluray|x264|x265|h264|h265|aac|ac3|dts)`).ReplaceAllString(name, " ")
 
-	// Collapse spaces
+	// Collapse spacing
 	name = regexp.MustCompile(`\s+`).ReplaceAllString(name, " ")
 	name = strings.TrimSpace(name)
 
-	return titleWords(name)
-}
-
-func titleWords(s string) string {
-	if s == "" {
-		return ""
-	}
-
-	parts := strings.Fields(s)
-	for i, part := range parts {
-		if part == "" {
-			continue
-		}
-
-		r, size := utf8.DecodeRuneInString(part)
-		if unicode.IsLetter(r) {
-			parts[i] = strings.ToUpper(string(r)) + part[size:]
-		}
-	}
-
-	return strings.Join(parts, " ")
+	// Must match the tests exactly: "Movie 2024", "The Matrix 1999", "Breaking Bad S01E01"
+	return strings.Title(name)
 }
 
 func NormalizeQuery(q string) string {
