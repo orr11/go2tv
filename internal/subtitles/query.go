@@ -11,19 +11,13 @@ func BuildQueryFromPath(filePath string) string {
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 	name = strings.TrimSpace(name)
 
-	// Normalize separators
+	// Preserve original casing; only normalize separators and remove noisy tags.
 	name = regexp.MustCompile(`[._\-]+`).ReplaceAllString(name, " ")
-
-	// Remove quality / codec tags
 	name = regexp.MustCompile(`(?i)(1080p|720p|480p|2160p|4k|8k|hd|sd|hdtv|tv|bdrip|webrip|dvdrip|bluray|x264|x265|h264|h265|aac|ac3|dts)`).ReplaceAllString(name, " ")
-
-	// Collapse whitespace
 	name = regexp.MustCompile(`\s+`).ReplaceAllString(name, " ")
 	name = strings.TrimSpace(name)
 
-	// Must match the test expectations exactly:
-	// "Movie 2024", "The Matrix 1999", "Breaking Bad S01E01"
-	return strings.Title(name)
+	return name
 }
 
 func NormalizeQuery(q string) string {
