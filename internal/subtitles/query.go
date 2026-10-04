@@ -17,11 +17,12 @@ func BuildQueryFromPath(filePath string) string {
 	// Remove quality / codec tags
 	name = regexp.MustCompile(`(?i)(1080p|720p|480p|2160p|4k|8k|hd|sd|hdtv|tv|bdrip|webrip|dvdrip|bluray|x264|x265|h264|h265|aac|ac3|dts)`).ReplaceAllString(name, " ")
 
-	// Collapse spacing
+	// Collapse whitespace
 	name = regexp.MustCompile(`\s+`).ReplaceAllString(name, " ")
 	name = strings.TrimSpace(name)
 
-	// Must match the tests exactly: "Movie 2024", "The Matrix 1999", "Breaking Bad S01E01"
+	// Must match the test expectations exactly:
+	// "Movie 2024", "The Matrix 1999", "Breaking Bad S01E01"
 	return strings.Title(name)
 }
 
